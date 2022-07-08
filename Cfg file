@@ -1,0 +1,41 @@
+global
+  chroot  /var/lib/haproxy
+  crt-base  /etc/pki/tls/certs
+  daemon  
+  group  haproxy
+  log  127.0.0.1 local0
+  maxconn  2000
+  pidfile  /var/run/haproxy.pid
+  stats  socket /var/lib/haproxy/stats
+  tune.ssl.default-dh-param  2048
+  user  haproxy
+
+defaults
+  log  global
+  maxconn  2000
+  mode  http
+  option  redispatch
+  option  forwardfor
+  option  http-server-close
+  retries  3
+  timeout  http-request 10s
+  timeout  queue 1m
+  timeout  connect 10s
+  timeout  client 1m
+  timeout  server 1m
+  timeout  check 10s
+
+frontend jenkins
+  bind *:443 no-sslv3 ssl crt jenkins-ci.cert
+  bind *:80 
+  default_backend  jenkins-mstr
+  redirect  location https://jenkins.my.domain/ if !{ ssl_fc }
+  reqadd  X-Forwarded-Proto:\ http
+
+backend jenkins-mstr
+  balance  roundrobin
+  http-request  set-header Host 127.0.0.1:8080
+  reqirep  ^([^\ \t:]*:)\ https://jenkins.my.domain/(.*) \1\ http://127.0.0.1:8080/\2
+  rspirep  ^([^\ \t:]*:)\ http://127.0.0.1:8080/(.*) \1\ https://jenkins.my.domain/\2
+  server node1 54.145.74.16:8080 check
+  server node2 54.243.1.96:8080 check
