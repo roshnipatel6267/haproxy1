@@ -28,7 +28,7 @@ pipeline
                 '''
             }
         }
-        stage('status-check')
+        stage('check-status')
         {
             steps
             {
