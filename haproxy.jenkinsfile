@@ -1,0 +1,43 @@
+def git_url = 'https://github.com/roshnipatel6267/haproxy1.git'
+
+
+pipeline
+{
+    stages
+    {
+        stage('copy-from github')
+        {
+            steps
+            {
+            sh '''
+            cd haproxy
+            echo "" >> haproxy.cfg
+            sudo cp -r . /opt/haproxy
+            '''
+            }
+        }
+        
+        stage('deploy-haproxy')
+        {
+            steps
+            {
+                sh '''
+                sudo docker-compose -f /opt/haproxy/haproxy-compose.yml down | exit 0
+                sudo docker-compose -f /opt/haproxy/haproxy-compose.yml up -d
+                sleep 5
+                '''
+            }
+        }
+        stage('status-check')
+        {
+            steps
+            {
+                sh '''
+                sleep 2
+                sudo docker logs haproxy 
+                sudo docker ps -a
+                '''
+            }
+        }
+    }
+}
